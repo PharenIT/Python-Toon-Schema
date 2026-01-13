@@ -1,69 +1,101 @@
-# TOON Format (Python)
+# TOON Format for Python
 
-TOON is a compact, reversible encoding of JSON designed to reduce LLM prompt tokens.
-This implementation focuses on a minimal, deterministic syntax and fast encode/decode.
+> **⚠️ Early Release (v0.1.x):** The API is stable enough for use, but may evolve before 1.0.0.
 
-## Core Syntax
+Compact, human-readable serialization format for LLM contexts with strong token savings on mixed and nested data. Uses a minimal syntax and deterministic round-trips. Designed for fast encode/decode and practical prompt efficiency.
 
-1. Objects use a key list and a value list: `{k1,k2|v1|v2}`
-2. Arrays use pipe separators: `[v1|v2|v3]`
-3. Tables (uniform dict arrays) use CSV blocks: `^csv[k1,k2|r1c1,r1c2|r2c1,r2c2]`
+## Key Features
 
-TOON is best for mixed or nested data. Pure tabular data is still smaller in raw CSV.
+Minimal syntax • Tabular arrays for uniform data • Optional auto format selection • Python 3.9+
+
+## Installation
+
+```bash
+pip install p-toon-llm
+```
 
 ## Quick Start
 
 ```python
-from toon_format import encode, decode, encode_best, encode_as, convert_format
+from toon_format import encode, decode
+
+# Simple object
+encode({"name": "Alice", "age": 30})
+# {name,age|Alice|30}
+
+# Tabular array (uniform objects)
+encode([{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}])
+# ^csv[id,name|1,Alice|2,Bob]
+
+# Decode back to Python
+decode("{items|[apple|banana]}")
+# {'items': ['apple', 'banana']}
+```
+
+## API Reference
+
+### `encode(value, options=None)` → `str`
+
+```python
+encode({"id": 123})
+encode({"id": 123}, {"mode": "auto", "candidates": ("toon", "json", "csv")})
+```
+
+Options:
+1. `mode`: `toon` (default), `hybrid`, or `auto`
+2. `candidates`: iterable of formats for auto mode
+3. `metric`: `tokens` or `chars` for auto mode
+
+### `decode(input_str, options=None)` → `Any`
+
+```python
+decode("{id|123}")
+```
+
+### Token Counting & Comparison
+
+```python
+from toon_format import estimate_savings, compare_formats, count_tokens
 
 data = {"users": [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]}
+result = estimate_savings(data)
+print(f"Saves {result['savings_percent']:.1f}% tokens")
 
-print(encode(data))
-print(decode(encode(data)))
-print(encode_best(data))
-print(encode_as(data, "json"))
-print(convert_format(encode(data), "yaml"))
+print(compare_formats(data))
+
+toon_str = encode(data)
+print(count_tokens(toon_str))
 ```
 
-## Installation
+Requires `tiktoken` for accurate token counts. Without it, `count_tokens` falls back to character length.
 
-1. Install the package from PyPI:
+## Format Specification
 
-```
-pip install p-toon
-```
+| Type | Example Input | TOON Output |
+|------|---------------|-------------|
+| **Object** | `{"name": "Alice", "age": 30}` | `{name,age|Alice|30}` |
+| **Primitive Array** | `[1, 2, 3]` | `[1|2|3]` |
+| **Tabular Array** | `[{"id": 1, "name": "A"}, {"id": 2, "name": "B"}]` | `^csv[id,name|1,A|2,B]` |
+| **Mixed Array** | `[{"x": 1}, 42, "hi"]` | `[{x|1}|42|hi]` |
 
-2. Optional dev tools for build and upload:
+Quoting: only when necessary (empty, reserved tokens, numeric ambiguity, whitespace, delimiters)
 
-```
-pip install -e .[dev]
-```
+Type Normalization: datetime/date -> ISO 8601 • Decimal -> float • NaN/Inf -> null • -0 -> 0
 
 ## Auto Mode
 
-1. Pick the smallest format automatically (tokens by default):
-
 ```python
+from toon_format import encode_best, encode
+
 best = encode_best(data, candidates=("toon", "json", "yaml", "csv"))
 print(best["format"], best["text"])
-```
 
-2. Or use auto mode inside `encode()`:
-
-```python
 print(encode(data, options={"mode": "auto", "candidates": ("toon", "json", "csv")}))
 ```
 
 ## Benchmarks
 
-This repository provides tooling to measure token savings locally so you can benchmark your own data.
-Run the demo or use `compare_formats` for a quick comparison, then expand to your real datasets.
-
-Example workflow:
-
-1. Start with a representative dataset that matches your production structure.
-2. Compare TOON vs JSON compact, JSON pretty, YAML, and CSV.
-3. Measure both tokens and chars, and pick the best format for your use case.
+TOON tends to win on mixed and nested data. CSV will usually win on flat tables. Use your own datasets for reliable results.
 
 ```python
 from toon_format import compare_formats, estimate_savings
@@ -72,43 +104,13 @@ print(compare_formats(data))
 print(estimate_savings(data))
 ```
 
-If you want to publish benchmark results in this README, add your measured numbers and dataset description.
+## Development
 
-## Format Examples
-
-Example object:
-
-```
-{name,age|Alice|30}
+```bash
+python -m pytest
 ```
 
-Example array:
-
-```
-[1|2|3]
-```
-
-Example table:
-
-```
-^csv[id,name|1,Alice|2,Bob]
-```
-
-## Layout
-
-```
-src/
-  encoder.py
-  decoder.py
-  detect.py
-  tokens.py
-  compare.py
-  formats.py
-  convert.py
-  toon_format.py
-```
-
-## Docs
+## Documentation
 
 1. `docs/index.md`
 2. `docs/format.md`
@@ -116,14 +118,6 @@ src/
 4. `docs/performance.md`
 5. `docs/prompt_header.md`
 
-## Tests
+## License
 
-```
-python -m pytest
-```
-
-## Demo
-
-```
-python examples/demo.py
-```
+MIT License – see `LICENSE`
