@@ -3,6 +3,11 @@
 TOON is a token-optimized, reversible serialization format intended for LLM prompts.
 It preserves structure while reducing noise compared to JSON.
 
+## Origin
+
+This project exists because multiple large customers wanted more efficient
+representations to reduce token costs in their AI solutions.
+
 ## Highlights
 
 - Compact object, array, and table encodings
@@ -24,3 +29,9 @@ print(encode_best(data))
 ```
 
 See `docs/format.md` for the full encoding rules.
+
+## Benchmarks
+
+This repository includes tools to benchmark TOON locally on your own datasets.
+Use `compare_formats` and `estimate_savings` with representative data to measure
+token and character savings, then decide whether TOON or another format is best.
