@@ -104,6 +104,34 @@ print(compare_formats(data))
 print(estimate_savings(data))
 ```
 
+Example dataset:
+
+```python
+data = {
+    "users": [
+        {"id": 1, "name": "Alice", "role": "admin"},
+        {"id": 2, "name": "Bob", "role": "member"},
+        {"id": 3, "name": "Cara", "role": "member"},
+    ],
+    "meta": {"team": "Toon", "active": True, "region": "EU"},
+    "events": [
+        {"type": "login", "user_id": 1, "ok": True},
+        {"type": "purchase", "user_id": 2, "amount": 19.99},
+        "note: rollout 1",
+    ],
+}
+```
+
+Example results (tokens and chars will vary by tokenizer and data):
+
+| Format       | Tokens | Size (chars) | Notes |
+|--------------|--------|--------------|-------|
+| TOON         | 203    | 203          | Compact mixed/nested |
+| JSON compact | 293    | 293          | Minified JSON |
+| JSON pretty  | 508    | 508          | Indented JSON |
+| YAML         | 322    | 322          | Simple YAML |
+| CSV (users)  | 53     | 53           | Table only |
+
 ## Development
 
 ```bash
