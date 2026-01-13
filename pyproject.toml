@@ -3,8 +3,8 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "p-toon"
-version = "0.1.0"
+name = "p-toon-llm"
+version = "0.1.1"
 description = "Token-oriented object notation (TOON) for compact, reversible JSON encoding"
 readme = "README.md"
 requires-python = ">=3.9"
